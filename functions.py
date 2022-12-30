@@ -4,6 +4,7 @@ import seaborn as sns
 import pandas as pd
 from copy import copy
 from scipy import stats
+from sklearn.base import BaseEstimator, TransformerMixin
 
 def factors(n):
     
@@ -216,3 +217,35 @@ def anova_test(data, group_field, indicator):
     p_val_alexgovern = stats.alexandergovern(*[data.loc[data[group_field]==group, indicator] for group in non_constant_groups], nan_policy = 'omit').pvalue
 
     return SCE/SCT, p_val_anova, p_val_alexgovern
+
+
+
+class CustomBinDiscretizer(BaseEstimator, TransformerMixin):
+    def __init__(self, 
+                 bins,
+                 right: 'bool' = True,
+                 labels=None,
+                 retbins: 'bool' = False,
+                 precision: 'int' = 3,
+                 include_lowest: 'bool' = False,
+                 duplicates: 'str' = 'raise',
+                 ordered: 'bool' = True):
+        self.bins = bins
+        self.right = right
+        self.labels = labels
+        self.retbins = retbins
+        self.precision = precision
+        self.include_lowest = include_lowest
+        self.duplicates = duplicates
+        self.ordered = ordered
+
+    def fit(self, X, y=None):
+        #Nothing to fit, given custom bins
+        return self
+
+    def transform(self, X, y=None):
+        # if isinstance(X, pd.DataFrame), ("Only pandas dataframes can be used as inputs for this function")
+        X_new = pd.DataFrame(X)
+        for col in X_new.columns:
+            X_new.loc[:, col] = pd.cut(x=X_new.loc[:, col].values, **self.__dict__)
+        return X_new
